@@ -67,7 +67,7 @@ function configureMasterSEO() {
         { property: 'og:image', content: BUSINESS_INFO.logo },
         
         // Twitter Card defaults
-        { name: 'twitter:site', content: '@theweightrm' }, // Replace with actual Twitter handle
+        { name: 'twitter:site', content: '@theweightrm' },
         { name: 'twitter:creator', content: '@theweightrm' },
         
         // Additional meta tags
@@ -137,6 +137,20 @@ function addGlobalSchema() {
                 "urlTemplate": BUSINESS_INFO.website + "/search?q={search_term_string}"
             },
             "query-input": "required name=search_term_string"
+        },
+        "mainEntity": {
+            "@type": "LocalBusiness",
+            "name": BUSINESS_INFO.name,
+            "address": {
+                "@type": "PostalAddress",
+                "streetAddress": BUSINESS_INFO.address.streetAddress,
+                "addressLocality": BUSINESS_INFO.address.addressLocality,
+                "addressRegion": BUSINESS_INFO.address.addressRegion,
+                "postalCode": BUSINESS_INFO.address.postalCode,
+                "addressCountry": BUSINESS_INFO.address.addressCountry
+            },
+            "telephone": BUSINESS_INFO.phone,
+            "email": BUSINESS_INFO.email
         }
     };
 

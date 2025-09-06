@@ -9,20 +9,20 @@ export const BUSINESS_INFO = {
     name: "The Weight RM",
     description: "Professional weight management and fitness services",
     address: {
-        streetAddress: "", // Add your address
-        addressLocality: "", // Add your city
-        addressRegion: "", // Add your state
-        postalCode: "", // Add your zip
+        streetAddress: "2535 W. 237th Street Suite 128",
+        addressLocality: "Torrance",
+        addressRegion: "CA",
+        postalCode: "90505",
         addressCountry: "US"
     },
-    phone: "", // Add your phone
-    email: "", // Add your email
-    website: "", // Add your website URL
-    logo: "", // Add your logo URL
+    phone: "(310) 406-7938",
+    email: "info@theweightrm.com",
+    website: "https://www.theweightrm.com",
+    logo: "https://www.theweightrm.com/images/logo.png", // Update with actual logo URL
     socialMedia: {
-        facebook: "",
-        instagram: "",
-        twitter: ""
+        facebook: "https://facebook.com/theweightrm",
+        instagram: "https://instagram.com/theweightrm", 
+        twitter: "https://twitter.com/theweightrm"
     }
 };
 
