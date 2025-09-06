@@ -174,18 +174,30 @@ export function delayNonCriticalResources(delay = 2000) {
 
 // Load analytics scripts after delay
 function loadAnalytics() {
-    // Google Analytics
-    if (!window.gtag && window.GA_MEASUREMENT_ID) {
+    // Google Analytics (AW-17246592812)
+    if (!window.gtag && !document.querySelector('script[src*="googletagmanager"]')) {
         const script = document.createElement('script');
         script.async = true;
-        script.src = `https://www.googletagmanager.com/gtag/js?id=${window.GA_MEASUREMENT_ID}`;
+        script.src = 'https://www.googletagmanager.com/gtag/js?id=AW-17246592812';
         document.head.appendChild(script);
         
         script.onload = () => {
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
+            window.gtag = gtag;
             gtag('js', new Date());
-            gtag('config', window.GA_MEASUREMENT_ID);
+            gtag('config', 'AW-17246592812', {
+                // Enhanced ecommerce and conversion tracking
+                send_page_view: false, // We'll handle page views manually
+                transport_type: 'beacon'
+            });
+            
+            // Track delayed page view (for performance optimization)
+            gtag('event', 'page_view', {
+                page_title: document.title,
+                page_location: window.location.href,
+                send_to: 'AW-17246592812'
+            });
         };
     }
 }

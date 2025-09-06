@@ -13,6 +13,12 @@ import {
 } from 'public/performanceUtils.js';
 
 $w.onReady(function () {
+    // Set Google Analytics ID for performance utilities
+    window.GA_MEASUREMENT_ID = 'AW-17246592812';
+    
+    // Initialize Google Analytics
+    initializeGoogleAnalytics();
+    
     // Performance optimizations (run first for faster loading)
     initializePerformanceOptimizations();
     
@@ -46,6 +52,53 @@ function initializePerformanceOptimizations() {
     
     // Add performance CSS for smooth loading
     addPerformanceCSS();
+}
+
+function initializeGoogleAnalytics() {
+    // Initialize Google Analytics with performance optimization
+    const connection = window.navigator.connection;
+    const shouldDelay = connection && (connection.effectiveType === '2g' || connection.effectiveType === 'slow-2g');
+    
+    // Delay analytics loading on slow connections for better performance
+    const delay = shouldDelay ? 3000 : 500;
+    
+    setTimeout(() => {
+        // Load Google Analytics script
+        const script = document.createElement('script');
+        script.async = true;
+        script.src = 'https://www.googletagmanager.com/gtag/js?id=AW-17246592812';
+        document.head.appendChild(script);
+        
+        // Initialize dataLayer and gtag function
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        window.gtag = gtag; // Make gtag globally accessible
+        
+        script.onload = () => {
+            gtag('js', new Date());
+            gtag('config', 'AW-17246592812', {
+                // Performance optimizations
+                transport_type: 'beacon',
+                custom_map: {
+                    'page_title': 'page_title',
+                    'page_location': 'page_url'
+                }
+            });
+            
+            // Track page view
+            gtag('event', 'page_view', {
+                page_title: document.title,
+                page_location: window.location.href,
+                page_path: window.location.pathname
+            });
+            
+            console.log('Google Analytics initialized successfully');
+        };
+        
+        script.onerror = () => {
+            console.warn('Failed to load Google Analytics');
+        };
+    }, delay);
 }
 
 function configureMasterSEO() {

@@ -2,6 +2,7 @@
 // SEO Implementation for Book Online Page - The Weight RM
 
 import { setSEODefaults, addServiceSchema, addBreadcrumbSchema } from 'public/seoUtils.js';
+import { trackBookingEvent, trackServiceInterest, initializeScrollTracking } from 'public/analyticsUtils.js';
 
 $w.onReady(function () {
     // SEO Configuration for Book Online Page
@@ -71,12 +72,46 @@ $w.onReady(function () {
         }
     ]);
 
+    // Initialize analytics tracking
+    initializeScrollTracking();
+    
+    // Track page view for booking page
+    trackBookingEvent('page_view', 'booking_page');
+    
     // Your existing booking functionality
     initializeBookingSystem();
 });
 
 // Initialize booking system
 function initializeBookingSystem() {
+    // Track when users interact with booking elements
+    
+    // Example: Track service selection (add to your actual service buttons)
+    /*
+    $w('#personalTrainingButton').onClick(() => {
+        trackServiceInterest('Personal Training');
+        trackBookingEvent('service_selected', 'Personal Training');
+    });
+    
+    $w('#nutritionButton').onClick(() => {
+        trackServiceInterest('Nutrition Counseling');
+        trackBookingEvent('service_selected', 'Nutrition Counseling');
+    });
+    
+    $w('#groupClassButton').onClick(() => {
+        trackServiceInterest('Group Fitness');
+        trackBookingEvent('service_selected', 'Group Fitness');
+    });
+    */
+    
+    // Track booking form submissions
+    /*
+    $w('#bookingForm').onSubmit(() => {
+        trackBookingEvent('booking_submitted', 'form_submission');
+        trackConversion('booking_conversion', 100); // Assign value to conversion
+    });
+    */
+    
     // Your existing booking logic here
     // Service selection, calendar integration, etc.
 }
