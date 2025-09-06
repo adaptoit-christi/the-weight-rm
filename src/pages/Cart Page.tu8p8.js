@@ -1,10 +1,35 @@
 // API Reference: https://www.wix.com/velo/reference/api-overview/introduction
-// “Hello, World!” Example: https://learn-code.wix.com/en/article/hello-world
+// SEO Implementation for Cart Page - The Weight RM
+
+import { setSEODefaults, addBreadcrumbSchema } from 'public/seoUtils.js';
 
 $w.onReady(function () {
-    // Write your JavaScript here
+    // SEO Configuration for Cart Page
+    setSEODefaults({
+        title: "Shopping Cart - The Weight RM",
+        description: "Review your selected weight management services and products before checkout at The Weight RM.",
+        keywords: "shopping cart, fitness services, weight management checkout",
+        ogType: "website",
+        robots: "noindex, nofollow" // Cart pages shouldn't be indexed
+    });
 
-    // To select an element by ID use: $w('#elementID')
+    // Breadcrumb Schema
+    addBreadcrumbSchema([
+        {
+            name: "Home",
+            url: "/"
+        },
+        {
+            name: "Cart",
+            url: "/cart"
+        }
+    ]);
 
-    // Click 'Preview' to run your code
+    // Your existing cart functionality
+    initializeCart();
 });
+
+// Initialize cart functionality
+function initializeCart() {
+    // Your existing cart logic here
+}

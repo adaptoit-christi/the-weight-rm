@@ -1,10 +1,40 @@
 // API Reference: https://www.wix.com/velo/reference/api-overview/introduction
-// “Hello, World!” Example: https://learn-code.wix.com/en/article/hello-world
+// SEO Implementation for Checkout Page - The Weight RM
+
+import { setSEODefaults, addBreadcrumbSchema } from 'public/seoUtils.js';
 
 $w.onReady(function () {
-    // Write your JavaScript here
+    // SEO Configuration for Checkout Page
+    setSEODefaults({
+        title: "Secure Checkout - The Weight RM",
+        description: "Complete your purchase securely for weight management services at The Weight RM. Safe and encrypted payment processing.",
+        keywords: "secure checkout, fitness payment, weight management purchase",
+        ogType: "website",
+        robots: "noindex, nofollow" // Checkout pages shouldn't be indexed
+    });
 
-    // To select an element by ID use: $w('#elementID')
+    // Breadcrumb Schema
+    addBreadcrumbSchema([
+        {
+            name: "Home",
+            url: "/"
+        },
+        {
+            name: "Cart",
+            url: "/cart"
+        },
+        {
+            name: "Checkout",
+            url: "/checkout"
+        }
+    ]);
 
-    // Click 'Preview' to run your code
+    // Your existing checkout functionality
+    initializeCheckout();
 });
+
+// Initialize secure checkout
+function initializeCheckout() {
+    // Your existing checkout logic here
+    // Payment processing, form validation, etc.
+}
