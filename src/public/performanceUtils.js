@@ -227,16 +227,55 @@ function loadChatWidgets() {
     // Example: Intercom, Zendesk Chat, etc.
 }
 
+// Preload critical fonts to fix 5s bottleneck
+function preloadCriticalFonts() {
+    const head = document.head;
+    
+    // Critical fonts from PageSpeed report
+    const criticalFonts = [
+        {
+            // KFOlCnqEu (Roboto) - the 5s bottleneck
+            href: 'https://fonts.gstatic.com/s/roboto/v30/KFOlCnqEu92Fr1MmEU9fBBc4.woff2',
+            type: 'woff2'
+        }
+    ];
+    
+    criticalFonts.forEach(font => {
+        const link = document.createElement('link');
+        link.rel = 'preload';
+        link.as = 'font';
+        link.type = `font/${font.type}`;
+        link.crossOrigin = 'anonymous';
+        link.href = font.href;
+        head.appendChild(link);
+    });
+    
+    // Add font-display swap CSS for all fonts
+    const fontOptimizationCSS = document.createElement('style');
+    fontOptimizationCSS.innerHTML = `
+        @font-face {
+            font-display: swap;
+        }
+        
+        /* Ensure all Google Fonts use font-display: swap */
+        [style*="font-family"] {
+            font-display: swap !important;
+        }
+    `;
+    head.appendChild(fontOptimizationCSS);
+}
+
 // Critical resource hints for faster loading
 export function addResourceHints() {
     const head = document.head;
     
-    // Preconnect to external domains
+    // Add font preload for critical fonts (fixes 5s bottleneck)
+    preloadCriticalFonts();
+    
+    // Preconnect only to most critical domains (limit to 3)
     const preconnectDomains = [
-        'https://static.wixstatic.com',
-        'https://fonts.googleapis.com',
-        'https://fonts.gstatic.com',
-        'https://www.google-analytics.com'
+        'https://static.parastorage.com', // Most critical - Wix assets
+        'https://fonts.gstatic.com'       // Critical - Font files (5s bottleneck)
     ];
     
     preconnectDomains.forEach(domain => {
@@ -247,8 +286,11 @@ export function addResourceHints() {
         head.appendChild(link);
     });
     
-    // DNS prefetch for other domains
+    // DNS prefetch for less critical domains (move others here)
     const dnsPrefetchDomains = [
+        'https://static.wixstatic.com',   // Moved from preconnect
+        'https://fonts.googleapis.com',  // Moved from preconnect  
+        'https://www.google-analytics.com', // Moved from preconnect
         'https://connect.facebook.net',
         'https://platform.twitter.com',
         'https://www.googletagmanager.com'
@@ -310,6 +352,66 @@ export function optimizeWixPerformance() {
     wixImages.forEach(img => {
         if (!img.loading) {
             img.loading = 'lazy';
+        }
+    });
+}
+
+// Optimize resource loading chains (fixes critical path latency)
+export function optimizeResourceChains() {
+    // Defer all non-critical JavaScript
+    deferNonCriticalScripts();
+    
+    // Optimize CSS loading
+    optimizeCSSLoading();
+    
+    // Reduce render-blocking resources
+    reduceRenderBlocking();
+}
+
+// Defer non-critical scripts to reduce blocking
+function deferNonCriticalScripts() {
+    const scripts = document.querySelectorAll('script[src]:not([defer]):not([async])');
+    scripts.forEach(script => {
+        const src = script.src;
+        
+        // Skip critical scripts
+        if (src.includes('wix') || src.includes('bootstrap') || src.includes('jquery')) {
+            return;
+        }
+        
+        // Add defer to non-critical scripts
+        script.defer = true;
+    });
+}
+
+// Optimize CSS loading
+function optimizeCSSLoading() {
+    const links = document.querySelectorAll('link[rel="stylesheet"]');
+    links.forEach(link => {
+        const href = link.href;
+        
+        // Non-critical CSS should be loaded asynchronously
+        if (!href.includes('critical') && !href.includes('above-fold')) {
+            link.media = 'print';
+            link.onload = function() {
+                this.media = 'all';
+                this.onload = null;
+            };
+        }
+    });
+}
+
+// Reduce render-blocking resources
+function reduceRenderBlocking() {
+    // Move all non-critical CSS to load after initial render
+    const nonCriticalCSS = document.querySelectorAll('link[rel="stylesheet"]:not([data-critical])');
+    nonCriticalCSS.forEach(link => {
+        if (!link.href.includes('fonts.googleapis.com')) { // Keep font CSS synchronous
+            link.rel = 'preload';
+            link.as = 'style';
+            link.onload = function() {
+                this.rel = 'stylesheet';
+            };
         }
     });
 }

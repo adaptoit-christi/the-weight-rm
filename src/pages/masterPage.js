@@ -9,7 +9,8 @@ import {
     delayNonCriticalResources, 
     addResourceHints,
     initializePerformanceMonitoring,
-    optimizeWixPerformance 
+    optimizeWixPerformance,
+    optimizeResourceChains
 } from 'public/performanceUtils.js';
 
 $w.onReady(function () {
@@ -32,26 +33,30 @@ $w.onReady(function () {
 });
 
 function initializePerformanceOptimizations() {
-    // Add resource hints for faster loading
+    // CRITICAL PATH OPTIMIZATION (fixes 5s latency)
+    // Step 1: Immediately add resource hints (highest priority)
     addResourceHints();
     
-    // Optimize based on user's connection speed
+    // Step 2: Add critical CSS inline for LCP improvement
+    addCriticalCSS();
+    
+    // Step 3: Optimize connection-based loading
     optimizeForConnection();
     
-    // Initialize lazy loading for images
+    // Step 4: Initialize lazy loading for images below fold
     initializeLazyLoading();
     
-    // Optimize Wix-specific performance
-    optimizeWixPerformance();
+    // DEFERRED OPTIMIZATIONS (prevent blocking critical path)
+    // Delay these to avoid blocking LCP
+    setTimeout(() => {
+        optimizeWixPerformance();
+        optimizeResourceChains(); // Fix dependency chains
+        addPerformanceCSS();
+        initializePerformanceMonitoring();
+    }, 100);
     
-    // Delay non-critical resources to improve load time
-    delayNonCriticalResources(2000);
-    
-    // Start performance monitoring
-    initializePerformanceMonitoring();
-    
-    // Add performance CSS for smooth loading
-    addPerformanceCSS();
+    // Delay non-critical resources significantly 
+    delayNonCriticalResources(3000); // Increased delay
 }
 
 function initializeGoogleAnalytics() {
@@ -99,6 +104,45 @@ function initializeGoogleAnalytics() {
             console.warn('Failed to load Google Analytics');
         };
     }, delay);
+}
+
+function addCriticalCSS() {
+    // Inline critical above-the-fold CSS to prevent render blocking
+    const criticalCSS = document.createElement('style');
+    criticalCSS.innerHTML = `
+        /* CRITICAL CSS - Above the fold content */
+        body { margin: 0; padding: 0; font-display: swap; }
+        
+        /* Hero section - optimize for LCP */
+        .hero-section, [data-testid*="hero"], .above-fold {
+            visibility: visible;
+            opacity: 1;
+            font-display: swap;
+        }
+        
+        /* Prevent FOUC (Flash of Unstyled Content) */
+        .wix-fonts-loading { visibility: hidden; }
+        .wix-fonts-loaded { visibility: visible; }
+        
+        /* Font loading optimization */
+        * { font-display: swap !important; }
+        
+        /* Prevent layout shift */
+        img { max-width: 100%; height: auto; }
+        
+        /* Loading skeleton for better perceived performance */
+        .loading-placeholder {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s infinite;
+        }
+        
+        @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+    `;
+    document.head.insertBefore(criticalCSS, document.head.firstChild);
 }
 
 function configureMasterSEO() {
