@@ -557,6 +557,203 @@ function cacheModule(moduleName) {
     }
 }
 
+// Optimize critical image loading (fix fetchpriority issues)
+export function optimizeCriticalImages() {
+    // Fix problematic high priority images
+    fixHighPriorityImages();
+    
+    // Implement proper image preloading strategy
+    implementImagePreloadingStrategy();
+    
+    // Optimize Wix image URLs for performance
+    optimizeWixImageUrls();
+}
+
+// Fix images with improper fetchpriority="high"
+function fixHighPriorityImages() {
+    // Find images with high fetch priority that aren't above the fold
+    const highPriorityImages = document.querySelectorAll('img[fetchpriority="high"]');
+    
+    highPriorityImages.forEach(img => {
+        // Check if image is actually above the fold
+        const rect = img.getBoundingClientRect();
+        const isAboveFold = rect.top < window.innerHeight;
+        
+        if (!isAboveFold) {
+            // Remove high priority for below-fold images
+            img.removeAttribute('fetchpriority');
+            img.loading = 'lazy';
+            
+            // Add to lazy loading queue
+            if (!img.dataset.src && img.src) {
+                img.dataset.src = img.src;
+                img.src = createPlaceholderDataUrl(img.width, img.height);
+                img.classList.add('lazy');
+            }
+        } else {
+            // Optimize above-fold images
+            optimizeAboveFoldImage(img);
+        }
+    });
+}
+
+// Create placeholder data URL for lazy loading
+function createPlaceholderDataUrl(width, height) {
+    const aspectRatio = height / width;
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.min(width, 50);
+    canvas.height = Math.min(height, 50 * aspectRatio);
+    
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#f0f0f0';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    return canvas.toDataURL('image/jpeg', 0.1);
+}
+
+// Optimize above-the-fold images
+function optimizeAboveFoldImage(img) {
+    const src = img.src || img.dataset.src;
+    if (src && src.includes('static.wixstatic.com')) {
+        // Optimize Wix image URL
+        const optimizedSrc = optimizeWixImageUrl(src, getConnectionInfo());
+        
+        // Preload the optimized image
+        const link = document.createElement('link');
+        link.rel = 'preload';
+        link.as = 'image';
+        link.href = optimizedSrc;
+        document.head.appendChild(link);
+        
+        // Update image source
+        img.src = optimizedSrc;
+    }
+}
+
+// Implement intelligent image preloading strategy
+function implementImagePreloadingStrategy() {
+    // Only preload truly critical images (hero, logo)
+    const criticalImageSelectors = [
+        'img[alt*="logo" i]',
+        'img[alt*="hero" i]',
+        '.hero-section img',
+        '[data-testid*="hero"] img'
+    ];
+    
+    criticalImageSelectors.forEach(selector => {
+        const images = document.querySelectorAll(selector);
+        images.forEach(img => {
+            if (img.src || img.dataset.src) {
+                preloadCriticalImage(img);
+            }
+        });
+    });
+}
+
+// Preload critical image with optimization
+function preloadCriticalImage(img) {
+    const src = img.src || img.dataset.src;
+    if (src) {
+        const optimizedSrc = src.includes('static.wixstatic.com') 
+            ? optimizeWixImageUrl(src, getConnectionInfo())
+            : src;
+        
+        const link = document.createElement('link');
+        link.rel = 'preload';
+        link.as = 'image';
+        link.href = optimizedSrc;
+        
+        // Add responsive preloading
+        if (img.srcset) {
+            link.imageSrcset = img.srcset;
+        }
+        
+        document.head.appendChild(link);
+    }
+}
+
+// Enhanced Wix image URL optimization
+function optimizeWixImageUrls() {
+    const wixImages = document.querySelectorAll('img[src*="static.wixstatic.com"]');
+    
+    wixImages.forEach(img => {
+        const originalSrc = img.src;
+        const optimizedSrc = optimizeWixImageUrl(originalSrc, getConnectionInfo());
+        
+        if (optimizedSrc !== originalSrc) {
+            img.src = optimizedSrc;
+        }
+    });
+}
+
+// Enhanced Wix image URL optimization with better parameters
+function optimizeWixImageUrl(src, connection) {
+    if (!src.includes('static.wixstatic.com')) {
+        return src;
+    }
+    
+    try {
+        const url = new URL(src);
+        const params = new URLSearchParams(url.search);
+        
+        // Connection-based quality optimization
+        let quality = 80; // Default quality
+        if (connection.effectiveType === '2g' || connection.effectiveType === 'slow-2g') {
+            quality = 40;
+        } else if (connection.effectiveType === '3g') {
+            quality = 60;
+        }
+        
+        // Set optimized parameters
+        params.set('quality', quality.toString());
+        params.set('format', 'webp'); // Use WebP for better compression
+        
+        // Enable progressive loading for larger images
+        const hasLargeDimensions = params.get('w') > 500 || params.get('h') > 500;
+        if (hasLargeDimensions) {
+            params.set('progressive', 'true');
+        }
+        
+        // Add blur placeholder for lazy loading
+        if (params.get('lazy') === 'true') {
+            params.set('blur', '10');
+        }
+        
+        url.search = params.toString();
+        return url.toString();
+        
+    } catch (error) {
+        console.warn('Failed to optimize Wix image URL:', error);
+        return src;
+    }
+}
+
+// Fix specific IMG_3670-4.jpg image issue
+export function fixSpecificImageIssues() {
+    // Target the specific problematic image
+    const problematicImage = document.querySelector('img[alt="IMG_3670-4.jpg"]');
+    
+    if (problematicImage) {
+        // Check if it's actually above the fold
+        const rect = problematicImage.getBoundingClientRect();
+        const isAboveFold = rect.top < window.innerHeight;
+        
+        if (!isAboveFold) {
+            // Convert to lazy loading
+            problematicImage.removeAttribute('fetchpriority');
+            problematicImage.loading = 'lazy';
+            
+            // Optimize the image URL
+            if (problematicImage.src.includes('static.wixstatic.com')) {
+                const optimizedSrc = optimizeWixImageUrl(problematicImage.src, getConnectionInfo());
+                problematicImage.src = optimizedSrc;
+            }
+            
+            console.log('Fixed IMG_3670-4.jpg: removed high priority, added lazy loading');
+        }
+    }
+}
+
 // Service Worker registration for caching
 export function registerServiceWorker() {
     if ('serviceWorker' in navigator) {

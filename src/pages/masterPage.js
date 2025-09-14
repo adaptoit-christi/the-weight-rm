@@ -11,7 +11,9 @@ import {
     initializePerformanceMonitoring,
     optimizeWixPerformance,
     optimizeResourceChains,
-    optimizeBundleLoading
+    optimizeBundleLoading,
+    optimizeCriticalImages,
+    fixSpecificImageIssues
 } from 'public/performanceUtils.js';
 
 $w.onReady(function () {
@@ -55,6 +57,8 @@ function initializePerformanceOptimizations() {
     setTimeout(() => {
         optimizeWixPerformance();
         optimizeResourceChains(); // Fix dependency chains
+        optimizeCriticalImages(); // Fix image loading issues
+        fixSpecificImageIssues(); // Fix IMG_3670-4.jpg specifically
         addPerformanceCSS();
         initializePerformanceMonitoring();
     }, 100);
