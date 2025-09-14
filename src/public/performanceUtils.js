@@ -754,6 +754,231 @@ export function fixSpecificImageIssues() {
     }
 }
 
+// Optimize critical request chains (reduce 487ms bottleneck)
+export function optimizeCriticalRequestChains() {
+    // Break font loading chains
+    optimizeFontLoadingChains();
+    
+    // Optimize access token requests
+    optimizeAccessTokenRequests();
+    
+    // Implement resource prioritization
+    implementResourcePrioritization();
+    
+    // Add request batching for better performance
+    addRequestBatching();
+}
+
+// Break font loading chains to reduce critical path
+function optimizeFontLoadingChains() {
+    // Preload critical fonts immediately to break dependency chains
+    const criticalFonts = [
+        {
+            family: 'helvetica-w01-bold',
+            url: 'https://static.parastorage.com/services/third-party/fonts/user-site-fonts/fonts/v1/helvetica-w01-bold.woff2',
+            display: 'swap'
+        },
+        {
+            family: 'madefor-text',
+            url: 'https://static.parastorage.com/services/santa-resources/resources/official_richTextTheme/v1/published/r/f73e760d-c6b3-4659-9a8c-9ce1d76c1173/madefor-text.var.or.woff2',
+            display: 'swap'
+        }
+    ];
+    
+    criticalFonts.forEach(font => {
+        // Create preload link for immediate font loading
+        const preloadLink = document.createElement('link');
+        preloadLink.rel = 'preload';
+        preloadLink.as = 'font';
+        preloadLink.type = 'font/woff2';
+        preloadLink.crossOrigin = 'anonymous';
+        preloadLink.href = font.url;
+        document.head.appendChild(preloadLink);
+        
+        // Add font-face declaration with optimized loading
+        const fontFaceCSS = document.createElement('style');
+        fontFaceCSS.innerHTML = `
+            @font-face {
+                font-family: '${font.family}';
+                src: url('${font.url}') format('woff2');
+                font-display: ${font.display};
+                font-weight: normal;
+                font-style: normal;
+            }
+        `;
+        document.head.appendChild(fontFaceCSS);
+    });
+}
+
+// Optimize access token requests (487ms bottleneck)
+function optimizeAccessTokenRequests() {
+    // Cache access tokens to reduce repeated requests
+    const tokenCache = {
+        get: (key) => {
+            const cached = sessionStorage.getItem(`token_${key}`);
+            if (cached) {
+                const { token, timestamp } = JSON.parse(cached);
+                // Check if token is still valid (5 minutes)
+                if (Date.now() - timestamp < 300000) {
+                    return token;
+                }
+                sessionStorage.removeItem(`token_${key}`);
+            }
+            return null;
+        },
+        set: (key, token) => {
+            sessionStorage.setItem(`token_${key}`, JSON.stringify({
+                token,
+                timestamp: Date.now()
+            }));
+        }
+    };
+    
+    // Intercept and optimize access token requests
+    const originalFetch = window.fetch;
+    window.fetch = function(url, options) {
+        if (typeof url === 'string' && url.includes('/v1/access-tokens')) {
+            const cacheKey = url;
+            const cachedToken = tokenCache.get(cacheKey);
+            
+            if (cachedToken) {
+                // Return cached token immediately
+                return Promise.resolve(new Response(cachedToken, {
+                    status: 200,
+                    statusText: 'OK',
+                    headers: { 'Content-Type': 'application/json' }
+                }));
+            }
+            
+            // Make request and cache result
+            return originalFetch.apply(this, arguments)
+                .then(response => {
+                    if (response.ok) {
+                        response.clone().text().then(text => {
+                            tokenCache.set(cacheKey, text);
+                        });
+                    }
+                    return response;
+                });
+        }
+        
+        return originalFetch.apply(this, arguments);
+    };
+}
+
+// Implement resource prioritization
+function implementResourcePrioritization() {
+    // Prioritize critical resources
+    const criticalResources = [
+        'https://www.theweightrm.com',
+        'react.production.min.js',
+        '/v1/access-tokens'
+    ];
+    
+    // Defer non-critical resources
+    const nonCriticalSelectors = [
+        'script:not([src*="react"]):not([src*="wix"]):not([async]):not([defer])',
+        'link[rel="stylesheet"]:not([href*="critical"])'
+    ];
+    
+    nonCriticalSelectors.forEach(selector => {
+        const elements = document.querySelectorAll(selector);
+        elements.forEach(element => {
+            if (element.tagName === 'SCRIPT') {
+                element.defer = true;
+            } else if (element.tagName === 'LINK') {
+                // Load CSS asynchronously
+                element.media = 'print';
+                element.onload = function() {
+                    this.media = 'all';
+                };
+            }
+        });
+    });
+}
+
+// Add request batching for better performance
+function addRequestBatching() {
+    let requestQueue = [];
+    let batchTimeout;
+    
+    const originalXMLHttpRequest = window.XMLHttpRequest;
+    
+    // Batch similar requests together
+    function batchRequests() {
+        if (requestQueue.length > 1) {
+            const similarRequests = groupSimilarRequests(requestQueue);
+            
+            // Execute batched requests
+            similarRequests.forEach(group => {
+                if (group.length > 1) {
+                    executeBatchedRequests(group);
+                } else {
+                    group[0].execute();
+                }
+            });
+        } else if (requestQueue.length === 1) {
+            requestQueue[0].execute();
+        }
+        
+        requestQueue = [];
+    }
+    
+    function groupSimilarRequests(requests) {
+        const groups = {};
+        requests.forEach(req => {
+            const baseUrl = req.url.split('?')[0];
+            if (!groups[baseUrl]) {
+                groups[baseUrl] = [];
+            }
+            groups[baseUrl].push(req);
+        });
+        return Object.values(groups);
+    }
+    
+    function executeBatchedRequests(requests) {
+        // Execute requests in parallel for better performance
+        Promise.all(requests.map(req => req.execute()))
+            .then(responses => {
+                console.log(`Batched ${requests.length} requests successfully`);
+            })
+            .catch(error => {
+                console.warn('Batch request failed:', error);
+                // Fallback to individual requests
+                requests.forEach(req => req.execute());
+            });
+    }
+}
+
+// Add early resource discovery
+export function addEarlyResourceDiscovery() {
+    // Add resource hints for the critical path
+    const resourceHints = [
+        {
+            rel: 'preload',
+            href: 'https://static.parastorage.com/unpkg/react@18.2.0/umd/react.production.min.js',
+            as: 'script',
+            crossOrigin: 'anonymous'
+        },
+        {
+            rel: 'preconnect',
+            href: 'https://www.theweightrm.com'
+        }
+    ];
+    
+    resourceHints.forEach(hint => {
+        const link = document.createElement('link');
+        Object.entries(hint).forEach(([key, value]) => {
+            if (key === 'crossOrigin') {
+                link.crossOrigin = value;
+            } else {
+                link.setAttribute(key === 'rel' ? 'rel' : key === 'href' ? 'href' : key === 'as' ? 'as' : key, value);
+            }
+        });
+        document.head.appendChild(link);
+    });
+}
+
 // Service Worker registration for caching
 export function registerServiceWorker() {
     if ('serviceWorker' in navigator) {

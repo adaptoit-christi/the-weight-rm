@@ -13,7 +13,9 @@ import {
     optimizeResourceChains,
     optimizeBundleLoading,
     optimizeCriticalImages,
-    fixSpecificImageIssues
+    fixSpecificImageIssues,
+    optimizeCriticalRequestChains,
+    addEarlyResourceDiscovery
 } from 'public/performanceUtils.js';
 
 $w.onReady(function () {
@@ -36,20 +38,26 @@ $w.onReady(function () {
 });
 
 function initializePerformanceOptimizations() {
-    // CRITICAL PATH OPTIMIZATION (fixes 5s latency)
-    // Step 1: Immediately optimize bundle loading (fix 70KB duplicate modules)
+    // CRITICAL PATH OPTIMIZATION (reduce 487ms chain latency)
+    // Step 1: Add early resource discovery for critical path
+    addEarlyResourceDiscovery();
+    
+    // Step 2: Optimize critical request chains (access-tokens, fonts)
+    optimizeCriticalRequestChains();
+    
+    // Step 3: Optimize bundle loading (fix 70KB duplicate modules)
     optimizeBundleLoading();
     
-    // Step 2: Add resource hints (highest priority)
+    // Step 4: Add resource hints (highest priority)
     addResourceHints();
     
-    // Step 3: Add critical CSS inline for LCP improvement
+    // Step 5: Add critical CSS inline for LCP improvement
     addCriticalCSS();
     
-    // Step 4: Optimize connection-based loading
+    // Step 6: Optimize connection-based loading
     optimizeForConnection();
     
-    // Step 5: Initialize lazy loading for images below fold
+    // Step 7: Initialize lazy loading for images below fold
     initializeLazyLoading();
     
     // DEFERRED OPTIMIZATIONS (prevent blocking critical path)
