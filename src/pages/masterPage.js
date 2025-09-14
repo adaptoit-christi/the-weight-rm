@@ -18,12 +18,22 @@ import {
     addEarlyResourceDiscovery,
     optimizeJavaScriptExecution,
     optimizeGoogleTagManager,
-    optimizeWebsiteBundle
+    optimizeWebsiteBundle,
+    applyAggressiveOptimizations,
+    addMetaOptimizations,
+    forceImmediateOptimizations
 } from 'public/performanceUtils.js';
+
+// IMMEDIATE CRITICAL OPTIMIZATIONS (before $w.onReady)
+forceImmediateOptimizations();
 
 $w.onReady(function () {
     // Set Google Analytics ID for performance utilities
     window.GA_MEASUREMENT_ID = 'AW-17246592812';
+    
+    // AGGRESSIVE PERFORMANCE BOOST (highest priority)
+    applyAggressiveOptimizations();
+    addMetaOptimizations();
     
     // Initialize Google Analytics
     initializeGoogleAnalytics();

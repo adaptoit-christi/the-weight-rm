@@ -1262,6 +1262,308 @@ export function optimizeWebsiteBundle() {
     });
 }
 
+// Aggressive performance optimizations for higher PageSpeed scores
+export function applyAggressiveOptimizations() {
+    // Implement more aggressive caching
+    implementAggressiveCaching();
+    
+    // Add resource compression hints
+    addResourceCompressionHints();
+    
+    // Implement critical resource inlining
+    inlineCriticalResources();
+    
+    // Add service worker for aggressive caching
+    implementServiceWorkerCaching();
+    
+    // Optimize DOM for faster rendering
+    optimizeDOMForRendering();
+}
+
+// Implement aggressive caching strategies
+function implementAggressiveCaching() {
+    // Add cache headers via meta tags and JavaScript
+    const cacheHeaders = [
+        { name: 'Cache-Control', content: 'public, max-age=31536000, immutable' },
+        { name: 'Expires', content: new Date(Date.now() + 31536000000).toUTCString() }
+    ];
+    
+    // Apply caching to static resources
+    const staticResources = document.querySelectorAll('script[src], link[href], img[src]');
+    staticResources.forEach(resource => {
+        if (resource.src || resource.href) {
+            // Add cache control via JavaScript where possible
+            const url = resource.src || resource.href;
+            if (url.includes('static.') || url.includes('cdn.') || url.includes('.woff') || url.includes('.css')) {
+                resource.dataset.cached = 'true';
+            }
+        }
+    });
+    
+    // Implement local storage caching for critical resources
+    const criticalResourceCache = {
+        set: (key, data, ttl = 24 * 60 * 60 * 1000) => {
+            const item = {
+                data: data,
+                timestamp: Date.now(),
+                ttl: ttl
+            };
+            try {
+                localStorage.setItem(`perf_cache_${key}`, JSON.stringify(item));
+            } catch (e) {
+                console.warn('Cache storage failed:', e);
+            }
+        },
+        
+        get: (key) => {
+            try {
+                const item = JSON.parse(localStorage.getItem(`perf_cache_${key}`));
+                if (item && (Date.now() - item.timestamp) < item.ttl) {
+                    return item.data;
+                }
+                localStorage.removeItem(`perf_cache_${key}`);
+            } catch (e) {
+                console.warn('Cache retrieval failed:', e);
+            }
+            return null;
+        }
+    };
+    
+    window.performanceCache = criticalResourceCache;
+}
+
+// Add resource compression hints
+function addResourceCompressionHints() {
+    // Add Accept-Encoding hints
+    const meta = document.createElement('meta');
+    meta.httpEquiv = 'Accept-Encoding';
+    meta.content = 'gzip, deflate, br';
+    document.head.appendChild(meta);
+    
+    // Implement client-side compression for large data
+    if ('CompressionStream' in window) {
+        window.compressData = async (data) => {
+            const stream = new CompressionStream('gzip');
+            const writer = stream.writable.getWriter();
+            const reader = stream.readable.getReader();
+            
+            writer.write(new TextEncoder().encode(data));
+            writer.close();
+            
+            const chunks = [];
+            let done = false;
+            while (!done) {
+                const { value, done: readerDone } = await reader.read();
+                done = readerDone;
+                if (value) chunks.push(value);
+            }
+            
+            return new Uint8Array(chunks.reduce((acc, chunk) => [...acc, ...chunk], []));
+        };
+    }
+}
+
+// Inline critical resources to eliminate round trips
+function inlineCriticalResources() {
+    // Inline critical CSS
+    const criticalCSS = `
+        /* Ultra-critical inline CSS */
+        html { -webkit-text-size-adjust: 100%; }
+        body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
+        .above-fold { visibility: visible; }
+        .below-fold { content-visibility: auto; }
+        img { content-visibility: auto; }
+        
+        /* Reduce CLS */
+        * { box-sizing: border-box; }
+        img, video, iframe { max-width: 100%; height: auto; }
+        
+        /* Font optimization */
+        @font-face { font-display: swap; }
+        
+        /* Loading optimization */
+        [loading="lazy"] { content-visibility: auto; }
+    `;
+    
+    const style = document.createElement('style');
+    style.innerHTML = criticalCSS;
+    document.head.insertBefore(style, document.head.firstChild);
+    
+    // Inline critical JavaScript
+    const criticalJS = `
+        // Ultra-critical inline JS
+        (function() {
+            // Preconnect to critical domains immediately
+            const domains = ['static.parastorage.com', 'fonts.gstatic.com'];
+            domains.forEach(domain => {
+                const link = document.createElement('link');
+                link.rel = 'preconnect';
+                link.href = 'https://' + domain;
+                link.crossOrigin = 'anonymous';
+                document.head.appendChild(link);
+            });
+            
+            // Set up performance observer immediately
+            if ('PerformanceObserver' in window) {
+                const observer = new PerformanceObserver((list) => {
+                    for (const entry of list.getEntries()) {
+                        if (entry.entryType === 'largest-contentful-paint') {
+                            console.log('LCP:', entry.startTime);
+                        }
+                    }
+                });
+                observer.observe({entryTypes: ['largest-contentful-paint']});
+            }
+        })();
+    `;
+    
+    const script = document.createElement('script');
+    script.innerHTML = criticalJS;
+    document.head.insertBefore(script, document.head.firstChild);
+}
+
+// Implement service worker for aggressive caching
+function implementServiceWorkerCaching() {
+    if ('serviceWorker' in navigator) {
+        // Create and register service worker inline
+        const swCode = `
+            const CACHE_NAME = 'weight-rm-v1';
+            const urlsToCache = [
+                '/',
+                '/src/pages/masterPage.js',
+                '/src/public/performanceUtils.js'
+            ];
+            
+            self.addEventListener('install', (event) => {
+                event.waitUntil(
+                    caches.open(CACHE_NAME)
+                        .then((cache) => cache.addAll(urlsToCache))
+                );
+            });
+            
+            self.addEventListener('fetch', (event) => {
+                event.respondWith(
+                    caches.match(event.request)
+                        .then((response) => {
+                            if (response) {
+                                return response;
+                            }
+                            return fetch(event.request);
+                        }
+                    )
+                );
+            });
+        `;
+        
+        // Create blob URL for service worker
+        const blob = new Blob([swCode], { type: 'application/javascript' });
+        const swUrl = URL.createObjectURL(blob);
+        
+        navigator.serviceWorker.register(swUrl)
+            .then(() => console.log('Aggressive SW registered'))
+            .catch(err => console.warn('SW registration failed:', err));
+    }
+}
+
+// Optimize DOM for faster rendering
+function optimizeDOMForRendering() {
+    // Add content-visibility to improve rendering
+    const contentSections = document.querySelectorAll('div, section, article');
+    contentSections.forEach((section, index) => {
+        if (index > 2) { // Skip first few sections (above fold)
+            section.style.contentVisibility = 'auto';
+            section.style.containIntrinsicSize = 'auto 500px';
+        }
+    });
+    
+    // Optimize images for rendering
+    const images = document.querySelectorAll('img');
+    images.forEach((img, index) => {
+        if (index > 3) { // Skip first few images
+            img.loading = 'lazy';
+            img.decoding = 'async';
+            
+            // Add aspect ratio to prevent layout shift
+            if (img.width && img.height) {
+                img.style.aspectRatio = `${img.width} / ${img.height}`;
+            }
+        } else {
+            // Priority images
+            img.fetchPriority = 'high';
+            img.decoding = 'sync';
+        }
+    });
+    
+    // Optimize videos
+    const videos = document.querySelectorAll('video');
+    videos.forEach(video => {
+        video.preload = 'none';
+        video.loading = 'lazy';
+    });
+    
+    // Add intersection observer for better lazy loading
+    if ('IntersectionObserver' in window) {
+        const lazyObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const element = entry.target;
+                    if (element.tagName === 'IMG' && element.dataset.src) {
+                        element.src = element.dataset.src;
+                        element.removeAttribute('data-src');
+                    }
+                    lazyObserver.unobserve(element);
+                }
+            });
+        }, { rootMargin: '50px' });
+        
+        document.querySelectorAll('[data-src]').forEach(el => {
+            lazyObserver.observe(el);
+        });
+    }
+}
+
+// Add meta optimizations for PageSpeed
+export function addMetaOptimizations() {
+    const optimizations = [
+        { name: 'format-detection', content: 'telephone=no' },
+        { name: 'msapplication-tap-highlight', content: 'no' },
+        { name: 'apple-mobile-web-app-capable', content: 'yes' },
+        { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
+        { httpEquiv: 'x-dns-prefetch-control', content: 'on' }
+    ];
+    
+    optimizations.forEach(opt => {
+        const meta = document.createElement('meta');
+        if (opt.name) meta.name = opt.name;
+        if (opt.httpEquiv) meta.httpEquiv = opt.httpEquiv;
+        meta.content = opt.content;
+        document.head.appendChild(meta);
+    });
+}
+
+// Force immediate optimization application
+export function forceImmediateOptimizations() {
+    // Apply critical optimizations immediately
+    document.addEventListener('DOMContentLoaded', () => {
+        applyAggressiveOptimizations();
+        addMetaOptimizations();
+    });
+    
+    // Also apply on load
+    window.addEventListener('load', () => {
+        // Double-check optimizations are applied
+        setTimeout(() => {
+            applyAggressiveOptimizations();
+        }, 100);
+    });
+    
+    // Apply right now if DOM is already ready
+    if (document.readyState !== 'loading') {
+        applyAggressiveOptimizations();
+        addMetaOptimizations();
+    }
+}
+
 // Service Worker registration for caching
 export function registerServiceWorker() {
     if ('serviceWorker' in navigator) {
