@@ -272,7 +272,14 @@ export function addResourceHints() {
     // Add font preload for critical fonts (fixes 5s bottleneck)
     preloadCriticalFonts();
     
-    // Preconnect only to most critical domains (limit to 3)
+    // Check if preconnects already added by immediate optimizations
+    const existingPreconnects = document.querySelectorAll('link[rel="preconnect"]').length;
+    if (existingPreconnects >= 2) {
+        console.log('Preconnects already optimized by immediate fixes');
+        return; // Skip to prevent >4 preconnects
+    }
+    
+    // Preconnect only to most critical domains (limit to 2)
     const preconnectDomains = [
         'https://static.parastorage.com', // Most critical - Wix assets
         'https://fonts.gstatic.com'       // Critical - Font files (5s bottleneck)
@@ -1543,6 +1550,15 @@ export function addMetaOptimizations() {
 
 // Force immediate optimization application
 export function forceImmediateOptimizations() {
+    // CRITICAL: Fix Google Fonts 4,459ms bottleneck immediately
+    fixGoogleFontsBottleneck();
+    
+    // CRITICAL: Fix preconnect issues immediately
+    fixPreconnectIssues();
+    
+    // CRITICAL: Fix LCP image priority
+    fixLCPImagePriority();
+    
     // Apply critical optimizations immediately
     document.addEventListener('DOMContentLoaded', () => {
         applyAggressiveOptimizations();
@@ -1562,6 +1578,133 @@ export function forceImmediateOptimizations() {
         applyAggressiveOptimizations();
         addMetaOptimizations();
     }
+}
+
+// Fix Google Fonts 4,459ms bottleneck immediately
+function fixGoogleFontsBottleneck() {
+    // Preload the specific problematic font immediately
+    const criticalFontUrl = 'https://fonts.gstatic.com/s/roboto/v18/KFOlCnqEu92Fr1MmEU9fBBc4.woff2';
+    
+    // Add immediate preload
+    const preloadLink = document.createElement('link');
+    preloadLink.rel = 'preload';
+    preloadLink.as = 'font';
+    preloadLink.type = 'font/woff2';
+    preloadLink.crossOrigin = 'anonymous';
+    preloadLink.href = criticalFontUrl;
+    document.head.insertBefore(preloadLink, document.head.firstChild);
+    
+    // Add font-face with font-display: swap immediately
+    const fontFaceStyle = document.createElement('style');
+    fontFaceStyle.innerHTML = `
+        @font-face {
+            font-family: 'Roboto';
+            src: url('${criticalFontUrl}') format('woff2');
+            font-display: swap;
+            font-weight: 400;
+            font-style: normal;
+        }
+    `;
+    document.head.insertBefore(fontFaceStyle, document.head.firstChild);
+    
+    // Block Google Fonts CSS from loading to prevent the 4.459s delay
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            mutation.addedNodes.forEach((node) => {
+                if (node.tagName === 'LINK' && node.href && node.href.includes('fonts.googleapis.com')) {
+                    console.log('Blocked Google Fonts CSS to prevent 4.459s delay');
+                    node.remove();
+                }
+            });
+        });
+    });
+    observer.observe(document.head, { childList: true });
+}
+
+// Fix preconnect issues (reduce from >4 to 2 critical ones)
+function fixPreconnectIssues() {
+    // Remove existing preconnects
+    document.querySelectorAll('link[rel="preconnect"]').forEach(link => {
+        if (!link.href.includes('static.parastorage.com') && !link.href.includes('fonts.gstatic.com')) {
+            link.remove();
+        }
+    });
+    
+    // Add only 2 critical preconnects
+    const criticalDomains = [
+        'https://static.parastorage.com',
+        'https://fonts.gstatic.com'
+    ];
+    
+    criticalDomains.forEach(domain => {
+        // Check if already exists
+        const existing = document.querySelector(`link[rel="preconnect"][href="${domain}"]`);
+        if (!existing) {
+            const link = document.createElement('link');
+            link.rel = 'preconnect';
+            link.href = domain;
+            link.crossOrigin = 'anonymous';
+            document.head.appendChild(link);
+        }
+    });
+}
+
+// Fix LCP image priority and discovery
+function fixLCPImagePriority() {
+    // Target the specific LCP image
+    setTimeout(() => {
+        const lcpImage = document.querySelector('img[alt="IMG_3670-4.jpg"]');
+        if (lcpImage) {
+            // Ensure it's not lazy loaded
+            lcpImage.loading = 'eager';
+            lcpImage.fetchPriority = 'high';
+            
+            // Add preload for LCP image
+            const preloadLink = document.createElement('link');
+            preloadLink.rel = 'preload';
+            preloadLink.as = 'image';
+            preloadLink.href = lcpImage.src || lcpImage.dataset.src;
+            preloadLink.fetchPriority = 'high';
+            document.head.appendChild(preloadLink);
+            
+            console.log('Fixed LCP image priority and preloading');
+        }
+    }, 0);
+}
+
+// Aggressive access-tokens optimization (reduce 431ms)
+export function optimizeAccessTokensAggressively() {
+    // Create prefetch for access-tokens endpoint immediately
+    const prefetchLink = document.createElement('link');
+    prefetchLink.rel = 'prefetch';
+    prefetchLink.href = '/v1/access-tokens';
+    document.head.appendChild(prefetchLink);
+    
+    // Override fetch for access-tokens with immediate cache
+    const originalFetch = window.fetch;
+    const tokenCache = new Map();
+    
+    window.fetch = function(url, options) {
+        if (typeof url === 'string' && url.includes('/v1/access-tokens')) {
+            const cached = tokenCache.get(url);
+            if (cached && (Date.now() - cached.timestamp) < 300000) { // 5 min cache
+                return Promise.resolve(new Response(cached.data, {
+                    status: 200,
+                    headers: { 'Content-Type': 'application/json' }
+                }));
+            }
+            
+            return originalFetch.apply(this, arguments).then(response => {
+                if (response.ok) {
+                    response.clone().text().then(data => {
+                        tokenCache.set(url, { data, timestamp: Date.now() });
+                    });
+                }
+                return response;
+            });
+        }
+        return originalFetch.apply(this, arguments);
+    };
 }
 
 // Service Worker registration for caching

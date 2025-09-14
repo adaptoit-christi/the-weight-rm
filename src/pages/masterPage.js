@@ -21,11 +21,13 @@ import {
     optimizeWebsiteBundle,
     applyAggressiveOptimizations,
     addMetaOptimizations,
-    forceImmediateOptimizations
+    forceImmediateOptimizations,
+    optimizeAccessTokensAggressively
 } from 'public/performanceUtils.js';
 
 // IMMEDIATE CRITICAL OPTIMIZATIONS (before $w.onReady)
 forceImmediateOptimizations();
+optimizeAccessTokensAggressively();
 
 $w.onReady(function () {
     // Set Google Analytics ID for performance utilities
