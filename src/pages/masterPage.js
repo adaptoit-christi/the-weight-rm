@@ -15,7 +15,10 @@ import {
     optimizeCriticalImages,
     fixSpecificImageIssues,
     optimizeCriticalRequestChains,
-    addEarlyResourceDiscovery
+    addEarlyResourceDiscovery,
+    optimizeJavaScriptExecution,
+    optimizeGoogleTagManager,
+    optimizeWebsiteBundle
 } from 'public/performanceUtils.js';
 
 $w.onReady(function () {
@@ -38,26 +41,32 @@ $w.onReady(function () {
 });
 
 function initializePerformanceOptimizations() {
-    // CRITICAL PATH OPTIMIZATION (reduce 487ms chain latency)
-    // Step 1: Add early resource discovery for critical path
+    // CRITICAL PATH OPTIMIZATION (reduce JavaScript execution time)
+    // Step 1: Optimize JavaScript execution immediately (reduce 549ms+ TBT)
+    optimizeJavaScriptExecution();
+    
+    // Step 2: Optimize Google Tag Manager (reduce 180ms execution)
+    optimizeGoogleTagManager();
+    
+    // Step 3: Add early resource discovery for critical path
     addEarlyResourceDiscovery();
     
-    // Step 2: Optimize critical request chains (access-tokens, fonts)
+    // Step 4: Optimize critical request chains (access-tokens, fonts)
     optimizeCriticalRequestChains();
     
-    // Step 3: Optimize bundle loading (fix 70KB duplicate modules)
+    // Step 5: Optimize bundle loading (fix 70KB duplicate modules)
     optimizeBundleLoading();
     
-    // Step 4: Add resource hints (highest priority)
+    // Step 6: Add resource hints (highest priority)
     addResourceHints();
     
-    // Step 5: Add critical CSS inline for LCP improvement
+    // Step 7: Add critical CSS inline for LCP improvement
     addCriticalCSS();
     
-    // Step 6: Optimize connection-based loading
+    // Step 8: Optimize connection-based loading
     optimizeForConnection();
     
-    // Step 7: Initialize lazy loading for images below fold
+    // Step 9: Initialize lazy loading for images below fold
     initializeLazyLoading();
     
     // DEFERRED OPTIMIZATIONS (prevent blocking critical path)
@@ -65,6 +74,7 @@ function initializePerformanceOptimizations() {
     setTimeout(() => {
         optimizeWixPerformance();
         optimizeResourceChains(); // Fix dependency chains
+        optimizeWebsiteBundle(); // Optimize CloudFront bundles (367ms)
         optimizeCriticalImages(); // Fix image loading issues
         fixSpecificImageIssues(); // Fix IMG_3670-4.jpg specifically
         addPerformanceCSS();
@@ -76,50 +86,24 @@ function initializePerformanceOptimizations() {
 }
 
 function initializeGoogleAnalytics() {
-    // Initialize Google Analytics with performance optimization
-    const connection = window.navigator.connection;
-    const shouldDelay = connection && (connection.effectiveType === '2g' || connection.effectiveType === 'slow-2g');
+    // Google Analytics is now handled by optimizeGoogleTagManager()
+    // This provides better performance with deferred loading and queueing
     
-    // Delay analytics loading on slow connections for better performance
-    const delay = shouldDelay ? 3000 : 500;
-    
-    setTimeout(() => {
-        // Load Google Analytics script
-        const script = document.createElement('script');
-        script.async = true;
-        script.src = 'https://www.googletagmanager.com/gtag/js?id=AW-17246592812';
-        document.head.appendChild(script);
-        
-        // Initialize dataLayer and gtag function
+    // Set up initial page tracking that will be processed when GTM loads
+    window.gtag = window.gtag || function() {
         window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        window.gtag = gtag; // Make gtag globally accessible
-        
-        script.onload = () => {
-            gtag('js', new Date());
-            gtag('config', 'AW-17246592812', {
-                // Performance optimizations
-                transport_type: 'beacon',
-                custom_map: {
-                    'page_title': 'page_title',
-                    'page_location': 'page_url'
-                }
-            });
-            
-            // Track page view
-            gtag('event', 'page_view', {
-                page_title: document.title,
-                page_location: window.location.href,
-                page_path: window.location.pathname
-            });
-            
-            console.log('Google Analytics initialized successfully');
-        };
-        
-        script.onerror = () => {
-            console.warn('Failed to load Google Analytics');
-        };
-    }, delay);
+        window.dataLayer.push(arguments);
+    };
+    
+    // Track initial page view (will be queued until GTM loads)
+    window.gtag('event', 'page_view', {
+        page_title: document.title,
+        page_location: window.location.href,
+        page_path: window.location.pathname,
+        send_to: 'AW-17246592812'
+    });
+    
+    console.log('Google Analytics initialization queued for optimized loading');
 }
 
 function addCriticalCSS() {
