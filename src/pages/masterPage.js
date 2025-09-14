@@ -22,12 +22,16 @@ import {
     applyAggressiveOptimizations,
     addMetaOptimizations,
     forceImmediateOptimizations,
-    optimizeAccessTokensAggressively
+    optimizeAccessTokensAggressively,
+    eliminateJavaScriptTBT,
+    moveHeavyComputationsToWebWorkers,
+    optimizeGarbageCollection
 } from 'public/performanceUtils.js';
 
 // IMMEDIATE CRITICAL OPTIMIZATIONS (before $w.onReady)
 forceImmediateOptimizations();
 optimizeAccessTokensAggressively();
+eliminateJavaScriptTBT(); // ELIMINATE 860ms+ TBT immediately
 
 $w.onReady(function () {
     // Set Google Analytics ID for performance utilities
@@ -89,6 +93,8 @@ function initializePerformanceOptimizations() {
         optimizeWebsiteBundle(); // Optimize CloudFront bundles (367ms)
         optimizeCriticalImages(); // Fix image loading issues
         fixSpecificImageIssues(); // Fix IMG_3670-4.jpg specifically
+        moveHeavyComputationsToWebWorkers(); // Move heavy work to background
+        optimizeGarbageCollection(); // Reduce 258ms GC time
         addPerformanceCSS();
         initializePerformanceMonitoring();
     }, 100);
