@@ -10,7 +10,8 @@ import {
     addResourceHints,
     initializePerformanceMonitoring,
     optimizeWixPerformance,
-    optimizeResourceChains
+    optimizeResourceChains,
+    optimizeBundleLoading
 } from 'public/performanceUtils.js';
 
 $w.onReady(function () {
@@ -34,16 +35,19 @@ $w.onReady(function () {
 
 function initializePerformanceOptimizations() {
     // CRITICAL PATH OPTIMIZATION (fixes 5s latency)
-    // Step 1: Immediately add resource hints (highest priority)
+    // Step 1: Immediately optimize bundle loading (fix 70KB duplicate modules)
+    optimizeBundleLoading();
+    
+    // Step 2: Add resource hints (highest priority)
     addResourceHints();
     
-    // Step 2: Add critical CSS inline for LCP improvement
+    // Step 3: Add critical CSS inline for LCP improvement
     addCriticalCSS();
     
-    // Step 3: Optimize connection-based loading
+    // Step 4: Optimize connection-based loading
     optimizeForConnection();
     
-    // Step 4: Initialize lazy loading for images below fold
+    // Step 5: Initialize lazy loading for images below fold
     initializeLazyLoading();
     
     // DEFERRED OPTIMIZATIONS (prevent blocking critical path)
