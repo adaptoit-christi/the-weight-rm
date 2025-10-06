@@ -1,48 +1,52 @@
 // API Reference: https://www.wix.com/velo/reference/api-overview/introduction
-// SEO Implementation for Home Page - The Weight RM
+// Content updates for Home Page - The Weight RM
 
 import { setSEODefaults, addLocalBusinessSchema, addBreadcrumbSchema } from 'public/seoUtils.js';
+import wixLocation from 'wix-location';
 
 $w.onReady(function () {
+    // Update page content
+    updatePageContent();
+
     // SEO Configuration for Home Page
     setSEODefaults({
-        title: "Professional Weight Management & Fitness Coaching",
-        description: "Transform your health with expert weight management, personalized fitness coaching, and nutrition guidance. Book your consultation today at The Weight RM.",
-        keywords: "weight loss programs, fitness coaching, nutrition counseling, health transformation, personal training",
+        title: "The Weight RM - Premium Gym & Personal Training in Torrance, South Bay CA",
+        description: "Premier fitness gym and personal training in Torrance, South Bay. Expert trainers, state-of-the-art equipment, and personalized workout programs. Join Torrance's top-rated gym today!",
+        keywords: "Torrance gym, South Bay gym, personal training Torrance, fitness center South Bay, weight training Torrance, strength training gym, Semi-Private Training, HYROX",
         ogType: "website",
-        ogImage: "/images/home-hero.jpg" // Update with actual image path
+        ogImage: "/images/home-hero.jpg"
     });
 
     // Local Business Schema
     addLocalBusinessSchema({
-        "@type": ["LocalBusiness", "HealthAndBeautyBusiness"],
+        "@type": ["LocalBusiness", "HealthAndBeautyBusiness", "Gym"],
         "priceRange": "$$",
         "hasOfferCatalog": {
             "@type": "OfferCatalog",
-            "name": "Weight Management Services",
+            "name": "Training Services",
             "itemListElement": [
                 {
                     "@type": "Offer",
                     "itemOffered": {
                         "@type": "Service",
-                        "name": "Personal Training",
-                        "description": "One-on-one fitness coaching sessions"
+                        "name": "Semi-Private Training",
+                        "description": "Small-group strength coaching (2-6 people) with personalized programs"
                     }
                 },
                 {
                     "@type": "Offer",
                     "itemOffered": {
                         "@type": "Service",
-                        "name": "Nutrition Counseling",
-                        "description": "Personalized nutrition planning and guidance"
+                        "name": "HYROX Conditioning",
+                        "description": "Functional conditioning designed to build endurance, power, and grit"
                     }
                 },
                 {
                     "@type": "Offer",
                     "itemOffered": {
                         "@type": "Service",
-                        "name": "Group Fitness Classes",
-                        "description": "Small group fitness sessions and support"
+                        "name": "Gym Classes",
+                        "description": "Open gym sessions and group conditioning classes"
                     }
                 }
             ]
@@ -51,7 +55,7 @@ $w.onReady(function () {
             {
                 "@type": "Offer",
                 "name": "Free Consultation",
-                "description": "Complimentary initial health and fitness assessment",
+                "description": "Complimentary initial fitness consultation",
                 "price": "0",
                 "priceCurrency": "USD"
             }
@@ -65,152 +69,37 @@ $w.onReady(function () {
             url: "/"
         }
     ]);
-
-    // Performance optimizations for Home page
-    initializeHomePageOptimizations();
-    
-    // Your existing JavaScript code here
-    // To select an element by ID use: $w('#elementID')
 });
 
-// Home page specific performance optimizations
-function initializeHomePageOptimizations() {
-    // Optimize hero section loading
-    optimizeHeroSection();
-    
-    // Lazy load below-the-fold content
-    lazyLoadContent();
-    
-    // Optimize form interactions
-    optimizeFormPerformance();
-    
-    // Preload critical resources
-    preloadCriticalResources();
-}
+function updatePageContent() {
+    // Update hero tagline - look for text containing "Control the Controllables" or similar
+    $w("Text").forEach(element => {
+        const text = element.text;
 
-function optimizeHeroSection() {
-    // Ensure hero content loads first
-    const heroSection = $w('#heroSection');
-    if (heroSection) {
-        // Add loading skeleton while content loads
-        heroSection.html = `
-            <div class="loading-skeleton" style="height: 300px; width: 100%; margin-bottom: 20px;"></div>
-            <div class="loading-skeleton" style="height: 40px; width: 60%; margin-bottom: 10px;"></div>
-            <div class="loading-skeleton" style="height: 20px; width: 80%;"></div>
-        `;
-        
-        // Load actual content after a brief delay
-        setTimeout(() => {
-            loadHeroContent();
-        }, 100);
-    }
-}
+        // Update main tagline
+        if (text && (text.includes("Control the Controllables") || text.includes("Empower Growth"))) {
+            element.text = "Built by Work, Backed by Science.";
+        }
 
-function loadHeroContent() {
-    // Replace with actual hero content
-    const heroSection = $w('#heroSection');
-    if (heroSection) {
-        heroSection.html = `
-            <h1>Transform Your Health at The Weight RM</h1>
-            <p>Professional weight management, fitness coaching, and nutrition guidance</p>
-            <button id="ctaButton">Book Your Free Consultation</button>
-        `;
-        
-        // Add click handler for CTA button
-        $w('#ctaButton').onClick(() => {
-            // Navigate to booking page
-            wixLocation.to('/book-online');
-        });
-    }
-}
+        // Update hero description if it mentions weight management generically
+        if (text && text.includes("Transform your health") && text.includes("weight management")) {
+            element.text = "South Bay's premier fitness center offering science-backed personal training in Torrance. One-on-one and semi-private coaching for people ready to transform their strength.";
+        }
 
-function lazyLoadContent() {
-    // Lazy load testimonials, service cards, etc.
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                const element = entry.target;
-                
-                // Load content based on element type
-                if (element.classList.contains('testimonials-section')) {
-                    loadTestimonials();
-                } else if (element.classList.contains('services-section')) {
-                    loadServices();
-                } else if (element.classList.contains('team-section')) {
-                    loadTeamMembers();
-                }
-                
-                observer.unobserve(element);
-            }
-        });
-    }, {
-        rootMargin: '100px' // Load content 100px before it comes into view
+        // Update "How We Train" to show the three training methods
+        if (text && text.includes("Personal Training") && !text.includes("Semi-Private")) {
+            element.text = "Semi-Private Training";
+        }
+
+        if (text && text.includes("Nutrition Counseling")) {
+            element.text = "HYROX Conditioning";
+        }
+
+        if (text && text.includes("Group Fitness Classes") && !text.includes("Gym Classes")) {
+            element.text = "Gym Classes";
+        }
     });
-    
-    // Observe sections for lazy loading
-    document.querySelectorAll('.testimonials-section, .services-section, .team-section').forEach(section => {
-        observer.observe(section);
-    });
-}
 
-function loadTestimonials() {
-    // Load testimonials content
-    console.log('Loading testimonials...');
-    // Your testimonial loading logic here
-}
-
-function loadServices() {
-    // Load services content
-    console.log('Loading services...');
-    // Your services loading logic here
-}
-
-function loadTeamMembers() {
-    // Load team members content
-    console.log('Loading team members...');
-    // Your team loading logic here
-}
-
-function optimizeFormPerformance() {
-    // Optimize contact forms, newsletter signup, etc.
-    const forms = document.querySelectorAll('form');
-    forms.forEach(form => {
-        // Add debouncing to form inputs
-        const inputs = form.querySelectorAll('input, textarea');
-        inputs.forEach(input => {
-            let timeout;
-            input.addEventListener('input', () => {
-                clearTimeout(timeout);
-                timeout = setTimeout(() => {
-                    // Validate input after user stops typing
-                    validateInput(input);
-                }, 300);
-            });
-        });
-    });
-}
-
-function validateInput(input) {
-    // Basic input validation
-    if (input.type === 'email') {
-        const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.value);
-        input.setCustomValidity(isValid ? '' : 'Please enter a valid email address');
-    }
-}
-
-function preloadCriticalResources() {
-    // Preload images that will be needed soon
-    const criticalImages = [
-        '/images/hero-background.jpg',
-        '/images/service-1.jpg',
-        '/images/service-2.jpg'
-    ];
-    
-    criticalImages.forEach(src => {
-        const link = document.createElement('link');
-        link.rel = 'preload';
-        link.as = 'image';
-        link.href = src;
-        document.head.appendChild(link);
-    });
+    // Add "Who We Help" and "What We Do" sections programmatically if possible
+    // Note: This requires knowing container IDs, so we'll update via text replacement for now
 }
